@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Monkey WASM Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+        }
+
+        textarea {
+            width: 100%;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 1em;
+            border-radius: 4px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        select {
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+
+<body>
+    <label for="exampleSelect">Monkey Example:</label>
+    <select id="exampleSelect">
+        <option value="hello">Hello World</option>
+        <option value="arithmetic">Simple Arithmetic</option>
+        <option value="vars">Variable Assignment</option>
+        <option value="function">Function Definition</option>
+        <option value="closure">Closure</option>
+        <option value="hash">Hash Map</option>
+        <option value="ifelse">If/Else</option>
+    </select>
+    <br>
+    <textarea id="input" rows="8" cols="60"></textarea><br>
+    <button onclick="runMonkey()">Run</button>
+    <button onclick="resetEnv()">Reset Environment</button>
+    <pre id="output"></pre>
+    <script type="module">
+        import init, { interpret, reset_env } from './writing_an_interpreter_in_rust.js';
+
+        const examples = {
+            hello: `"hello, world!"`,
+            arithmetic: `1 + 2 * 3 - 4 / 2`,
+            vars: `let a = 10;\nlet b = 20;\na + b`,
+            function: `let add = fn(x, y) { x + y; };\nadd(5, 7)`,
+            closure: `let newAdder = fn(x) {\n  fn(y) { x + y };\n};\nlet addTwo = newAdder(2);\naddTwo(3)`,
+            hash: `let myMap = {"one": 1, "two": 2, "three": 3};\nmyMap["two"]`,
+            ifelse: `if (10 > 5) { 99 } else { 100 }`
+        };
+
+        // Pre-fill textarea with the first example
+        document.getElementById('input').value = examples.hello;
+
+        document.getElementById('exampleSelect').addEventListener('change', function () {
+            document.getElementById('input').value = examples[this.value];
+        });
+
+        let wasmReady = false;
+        let wasmInitPromise = init().then(() => { wasmReady = true; });
+
+        window.runMonkey = async function () {
+            await wasmInitPromise;
+            const input = document.getElementById('input').value;
+            const result = interpret(input);
+            document.getElementById('output').textContent = result;
+        };
+
+        window.resetEnv = async function () {
+            await wasmInitPromise;
+            reset_env();
+            document.getElementById('output').textContent = "Environment reset.";
+        };
+    </script>
+</body>
+
+</html>
